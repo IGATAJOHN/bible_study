@@ -1,11 +1,6 @@
 from flask import Flask, render_template, session, redirect, request, url_for, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin, current_user
-from flask_sqlalchemy import SQLAlchemy
 import os
-from itsdangerous import URLSafeTimedSerializer
-
-from flask_migrate import Migrate
 from dotenv import load_dotenv
 from openai import OpenAI
 load_dotenv()
@@ -13,13 +8,12 @@ app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
+
 api_key=os.getenv('OPENAI_API_KEY')
 client=OpenAI(api_key=api_key)
 # Configuration for email
 
-# Secret key for generating reset tokens
-serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
