@@ -8,33 +8,9 @@ app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
-
 api_key=os.getenv('OPENAI_API_KEY')
 client=OpenAI(api_key=api_key)
 # Configuration for email
-
-
-
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(150), nullable=False)
-    last_name = db.Column(db.String(150), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-
-# Initialize Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-with app.app_context():
-    db.create_all()
-
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))
-
-
 
 @app.route('/get-response', methods=['POST'])
 def get_response():
