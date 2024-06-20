@@ -6,8 +6,8 @@ from openai import OpenAI
 load_dotenv()
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
-db = SQLAlchemy(app)
+
+
 
 api_key=os.getenv('OPENAI_API_KEY')
 client=OpenAI(api_key=api_key)
