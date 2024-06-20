@@ -1,0 +1,234 @@
+{%extends 'index.html'%}
+{%block content%}
+<body>
+    <main id="main">
+        <div class="chat-container">
+            <div class="chat-background"></div> <!-- Background layer -->
+            <div class="chat-header">
+                <h2 style="text-align: left;">Bible Study</h2>
+                <button id="toggle-theme-btn" class="toggle-theme-btn">
+                    <i class="fas fa-adjust"></i>Theme
+                </button>
+            </div>
+            <div id="chat-body" class="chat-body">
+                <!-- Initial bot message -->
+                 <!-- Loader for bot response -->
+
+
+            </div>
+            <div id="loader" class="loader" style="display: none;"></div>
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Type a message">
+                <span id="voice-note-btn" class="voice-note-btn" onclick="toggleVoiceInput()">
+                    <i class="fas fa-microphone"></i>
+                </span>
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+   
+    </main>
+
+    <script>
+document.getElementById('send-btn').addEventListener('click', () => {
+    const userInput = document.getElementById('user-input').value;
+    if (userInput.trim() === '') return;
+    sendUserMessage(userInput); // Send user message
+    document.getElementById('user-input').value = ''; // Clear input field
+});
+
+window.addEventListener('load', () => {
+    displayBotMessage('Hello! I\'m Your Bible study guide, Lets study together', true);
+});
+
+document.getElementById('toggle-theme-btn').addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+});
+
+async function sendUserMessage(message) {
+    const chatBody = document.getElementById('chat-body');
+    const userMessage = document.createElement('div');
+    userMessage.classList.add('message', 'user');
+
+    // Get current timestamp
+    const timestamp = new Date().toLocaleTimeString();
+
+    userMessage.innerHTML = `<div class="text">${message}</div>
+                             <div class="timestamp">${timestamp}</div>`;
+    chatBody.appendChild(userMessage);
+
+    showLoader(); // Show loader while waiting for the bot response
+
+    try {
+        const response = await fetch('/get-response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ input: message })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        displayBotMessage(data.response);
+    } catch (error) {
+        displayBotMessage(`An error occurred: ${error.message}`);
+    } finally {
+        hideLoader(); // Hide loader after getting the bot response
+    }
+}
+
+function displayBotMessage(response, initial = false) {
+    const chatBody = document.getElementById('chat-body');
+
+    // Create bot response container
+    const botContainer = document.createElement('div');
+    botContainer.classList.add('bot-container');
+
+    // Append bot icon
+    const botIcon = document.createElement('div');
+    botIcon.classList.add('bot-icon');
+
+    const customLogoSrc = '/static/assets/img/bible.jfif'; // Path to your logo
+    const logoImg = document.createElement('img');
+    logoImg.src = customLogoSrc;
+    logoImg.alt = 'Bot Logo';
+    logoImg.className = 'bot-logo'; // Add class for styling
+
+    botIcon.appendChild(logoImg);
+    botContainer.appendChild(botIcon);
+
+    // Get current timestamp
+    const timestamp = new Date().toLocaleTimeString();
+
+    // Append bot message
+    const botMessage = document.createElement('div');
+    botMessage.classList.add('message', 'bot');
+    botMessage.innerHTML = `<div class="text">${response}</div>
+                            <div class="timestamp">${timestamp}</div>
+                            ${initial ? '' : `
+                            <div class="feedback-icons">
+                                <span class="icon thumbs-up" onclick="likeMessage()">👍</span>
+                                <span class="icon thumbs-down" onclick="dislikeMessage()">👎</span>
+                                <span class="icon copy" onclick="copyMessage('${response}')">📋</span>
+                                <span class="icon speaker" onclick="textToSpeech('${response}')">🔊</span>
+                            </div>`}`;
+    botContainer.appendChild(botMessage);
+
+    chatBody.appendChild(botContainer);
+
+    // Scroll to bottom
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Show and hide loader functions
+function showLoader() {
+    document.getElementById('loader').style.display = 'block';
+}
+
+function hideLoader() {
+    document.getElementById('loader').style.display = 'none';
+}
+
+// Voice recognition variables
+let recognition;
+let selectedVoice;
+// Function to show loader
+function showLoader() {
+    const chatBody = document.getElementById('chat-body');
+
+    // Create a loader element
+    const loaderElement = document.createElement('div');
+    loaderElement.id = 'loader';
+    loaderElement.classList.add('loader');
+
+    // Append loader to chat body
+    chatBody.appendChild(loaderElement);
+
+    // Scroll to the bottom
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Function to hide loader
+function hideLoader() {
+    const loaderElement = document.getElementById('loader');
+    if (loaderElement) {
+        loaderElement.remove();
+    }
+}
+// JavaScript functions for icons
+function likeMessage(element) {
+    alert('You liked the message.');
+}
+
+function dislikeMessage(element) {
+    alert('You disliked the message.');
+}
+
+function copyMessage(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Message copied to clipboard.');
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+    });
+}
+// Initialize voices
+
+
+function getBotResponse(userInput) {
+    const apiUrl = 'http://192.168.115.11:5000/chatbot'; // URL of your Flask backend
+
+    return fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: userInput })
+    })
+    .then(response => response.json())
+    .then(data => data.reply) // Extract the reply from the response
+    .catch(error => {
+        console.error('Error fetching bot response:', error);
+        return "Thank you for providing your symptoms, now let me analyze them.";
+    });
+}
+
+// Send user message and process bot response
+function sendUserMessage(userInput) {
+    appendUserMessage(userInput);
+
+    // Call the API to get a response
+    getBotResponse(userInput).then(botResponse => {
+        appendBotMessage(botResponse);
+        textToSpeech(botResponse); // Automatically play the bot's response
+    });
+}
+
+// Append user's message to the chat
+function appendUserMessage(message) {
+    const chatBody = document.querySelector('.chat-body');
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user';
+    userMessage.textContent = message;
+    chatBody.appendChild(userMessage);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Append bot's message to the chat
+function appendBotMessage(message) {
+    const chatBody = document.querySelector('.chat-body');
+    const botMessage = document.createElement('div');
+    botMessage.className = 'message bot';
+    botMessage.textContent = message;
+    chatBody.appendChild(botMessage);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+    </script>
+{%endblock content%}
