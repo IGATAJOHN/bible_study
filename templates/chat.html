@@ -1,8 +1,43 @@
-{%extends 'index.html'%}
-{%block content%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static',filename='css/style.css')}}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  
+    <title>Bible Study</title>
+</head>
+<style>
+      
+        /* Default Light Theme */
+body.light-theme {
+    background-color: #f8f9fa; /* Bootstrap's light background */
+    color: #000;
+}
+
+/* Dark Theme */
+body.dark-theme {
+    background-color: #343a40; /* Bootstrap's dark background */
+    color: #fff;
+}
+
+/* Example styling for your cards and text */
+.card {
+    border: 1px solid rgba(0,0,0,0.125);
+    background-color: #fff;
+}
+
+body.dark-theme .card {
+    border: 1px solid rgba(255,255,255,0.125);
+    background-color: #444;
+}
+
+</style>
 <body>
-    <main id="main">
-        <div class="chat-container">
+        <div class="chat-container" style="margin-top: 0px; height: 100vh;">
             <div class="chat-background"></div> <!-- Background layer -->
             <div class="chat-header">
                 <h2 style="text-align: left;">Bible Study</h2>
@@ -17,7 +52,7 @@
 
             </div>
             <div id="loader" class="loader" style="display: none;"></div>
-            <div class="chat-input">
+            <div class="chat-input" style="margin-top: 0px;">
                 <input type="text" id="user-input" placeholder="Type a message">
                 <span id="voice-note-btn" class="voice-note-btn" onclick="toggleVoiceInput()">
                     <i class="fas fa-microphone"></i>
@@ -26,7 +61,7 @@
             </div>
         </div>
    
-    </main>
+    
 
     <script>
 document.getElementById('send-btn').addEventListener('click', () => {
@@ -182,7 +217,7 @@ function copyMessage(text) {
 
 
 function getBotResponse(userInput) {
-    const apiUrl = 'https://bible-study.onrender.com/chatbot'; // URL of your Flask backend
+    const apiUrl = 'http://192.168.115.11:5000/chatbot'; // URL of your Flask backend
 
     return fetch(apiUrl, {
         method: 'POST',
@@ -229,6 +264,65 @@ function appendBotMessage(message) {
     chatBody.appendChild(botMessage);
     chatBody.scrollTop = chatBody.scrollHeight;
 }
+$(document).ready(function() {
+        $('#send-btn').click(function() {
+            sendMessage();
+        });
 
+        $('#user-input').keypress(function(e) {
+            if (e.which == 13) {  // Enter key pressed
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            var userInput = $('#user-input').val();
+            if (userInput.trim() === '') {
+                return;
+            }
+
+            // Append user message to chat body
+            $('#chat-body').append(`
+                <div class="message user">
+                    <div class="text">${userInput}</div>
+                </div>
+            `);
+            $('#user-input').val('');  // Clear input field
+
+            // Scroll to the bottom of the chat body
+            $('#chat-body').scrollTop($('#chat-body')[0].scrollHeight);
+
+            // Send the message to the backend
+            $.ajax({
+                url: '/get-response',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ input: userInput }),
+                success: function(response) {
+                    if (response.error) {
+                        alert('Error: ' + response.error);
+                        return;
+                    }
+
+                    var botResponse = response.response;
+
+                    // Append bot response to chat body
+                    $('#chat-body').append(`
+                        <div class="message bot">
+                            <i class="bi bi-robot"></i>
+                            <div class="text">${botResponse}</div>
+                        </div>
+                    `);
+
+                    // Scroll to the bottom of the chat body
+                    $('#chat-body').scrollTop($('#chat-body')[0].scrollHeight);
+                },
+                error: function(xhr, status, error) {
+                    alert('An error occurred: ' + error);
+                }
+            });
+        }
+    });
     </script>
-{%endblock content%}
+</body>
+</html>
