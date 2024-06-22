@@ -41,7 +41,10 @@ def generate_response(user_input):
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "You are a bible teacher, simplifying the bible to a level, a new believer can understand, you are to explain concepts from the lens of the bible, you were developed by the Teaching Ministry of  Jesus the Solid Rock Prayer Group,Pasali, Kuje, under the guidance of the Holy Spirit"},
+                {"role": "system", "content": """You are a bible teacher, simplifying the bible to a level, a new believer can understand, 
+                you are to explain concepts from the lens of the bible, you were developed by the Teaching Ministry of  Jesus the Solid Rock Prayer Group,Pasali, Kuje, 
+                under the guidance of the Holy Spirit.
+                you can converse or continue a conversation in pidgin english, ibo, hausa and yoruba"""},
                 {"role": "user", "content": user_input}
             ]
         )
@@ -70,4 +73,4 @@ def unauthorized(error):
 #    return redirect(url_for('login'))
 
 if __name__=='__main__':
-    app.run(debug=True, host='0.0.0.0', port='5000')
+    app.run(debug=True, host='0.0.0.0', port='10000')
