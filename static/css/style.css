@@ -208,7 +208,19 @@ body.dark-mode {
     font-family: 'Roboto', sans-serif;
     outline: none;
 }
-
+@media screen and (max-width: 600px) {
+    .chat-body {
+        max-height: 500px; /* Adjust max height for smaller screens */
+    }
+    
+    .message {
+        max-width: 90%; /* Further increase message width on smaller screens */
+    }
+    
+    .timestamp {
+        font-size: 0.6em; /* Further reduce timestamp font size */
+    }
+}
 
 
 
