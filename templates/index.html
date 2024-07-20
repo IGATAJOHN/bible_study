@@ -21,6 +21,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Template Main CSS File -->
   <link href="{{url_for('static',filename='assets/css/style.css')}}" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
 
   <link rel="stylesheet" href="{{url_for('static',filename='css/style.css')}}">
 </head>
@@ -132,7 +133,18 @@ body.dark-theme .card {
     
     <!-- Template Main JS File -->
     <script src="{{url_for('static',filename='assets/js/main.js')}}"></script>
-    
+        <script>
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js')
+              .then(function(registration) {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+              }, function(error) {
+                console.log('ServiceWorker registration failed: ', error);
+              });
+          });
+        }
+      </script>
 </body>
 <script>
 
