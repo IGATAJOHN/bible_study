@@ -5,3 +5,4 @@ python-dotenv
 flask_login
 flask_sqlalchemy
 flask_migrate
+requests
