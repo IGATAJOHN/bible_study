@@ -7,7 +7,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_migrate import Migrate
 from dotenv import load_dotenv
 from openai import OpenAI
-
+import requests
 load_dotenv()
 app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -115,6 +115,46 @@ def chat():
 @app.errorhandler(401)
 def unauthorized(error):
     return render_template('unauthorize.html'), 401
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    data = request.json
+    # Process incoming message
+    handle_message(data)
+    return jsonify({'status': 'success'})
+def handle_message(data):
+    try:
+        # Extract the message details from the incoming data
+        if 'messages' in data['entry'][0]['changes'][0]['value']:
+            messages = data['entry'][0]['changes'][0]['value']['messages']
+            for message in messages:
+                if message['type'] == 'text':
+                    user_input = message['text']['body']
+                    phone_number = message['from']
 
+                    # Generate response using your existing generate_response function
+                    response_text = generate_response(user_input)
+
+                    # Send the response back to the user
+                    send_whatsapp_message(phone_number, response_text)
+    except Exception as e:
+        print(f"Error handling message: {str(e)}")
+def send_whatsapp_message(phone_number, message_text):
+    url = 'https://graph.facebook.com/v19.0/364928576706283/messages'
+    headers = {
+        'Authorization': f'Bearer {os.getenv("WHATSAPP_API_TOKEN")}',
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        'messaging_product': 'whatsapp',
+        'to': phone_number,
+        'type': 'text',
+        'text': {
+            'body': message_text
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code != 200:
+        print(f"Failed to send message: {response.text}")
 if __name__=='__main__':
     app.run(debug=True, host='0.0.0.0', port='5000')
