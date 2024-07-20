@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=api_key)
-
+VERIFY_TOKEN = 'c07240d75087dfa3a4e856c1eeefcd5a'
 # Configuration for email
 # Secret key for generating reset tokens
 serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
@@ -115,15 +115,21 @@ def chat():
 @app.errorhandler(401)
 def unauthorized(error):
     return render_template('unauthorize.html'), 401
-@app.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
-    data = request.json
-    # Process incoming message
-    handle_message(data)
-    return jsonify({'status': 'success'})
+    if request.method == 'GET':
+        verify_token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        if verify_token == VERIFY_TOKEN:
+            return str(challenge)
+        return 'Verification token mismatch', 403
+
+    if request.method == 'POST':
+        data = request.json
+        handle_message(data)
+        return jsonify({'status': 'success'})
 def handle_message(data):
     try:
-        # Extract the message details from the incoming data
         if 'messages' in data['entry'][0]['changes'][0]['value']:
             messages = data['entry'][0]['changes'][0]['value']['messages']
             for message in messages:
@@ -131,11 +137,10 @@ def handle_message(data):
                     user_input = message['text']['body']
                     phone_number = message['from']
 
-                    # Generate response using your existing generate_response function
                     response_text = generate_response(user_input)
-
-                    # Send the response back to the user
                     send_whatsapp_message(phone_number, response_text)
+    except Exception as e:
+        print(f"Error handling message: {str(e)}")
     except Exception as e:
         print(f"Error handling message: {str(e)}")
 def send_whatsapp_message(phone_number, message_text):
