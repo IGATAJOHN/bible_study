@@ -31,7 +31,7 @@ To run the Bible Study AI App locally:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/bible-study-ai.git
+   git clone https://github.com/IGATAJOHN/bible_study.git
    cd bible-study-ai
    ```
 
