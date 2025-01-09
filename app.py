@@ -92,7 +92,7 @@ def generate_response(conversation_history):
     try:
         # Create a chat completion using the fine-tuned GPT-3.5 Turbo model
         completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             messages=[
                 {"role": "system", "content": """You are a bible teacher, simplifying the bible to a level, a new believer can understand, 
                 you are to explain concepts from the lens of the bible, after initial greetings by the user, you are to ask the user for their name so that you can relate more personally with them,you were developed by bro.Igata John from Teaching Ministry of  Jesus the Solid Rock Prayer Group,Pasali, Kuje, 
