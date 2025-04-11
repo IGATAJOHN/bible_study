@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="description" content="Bible Study Companion - Digital Scripture Exploration">
+    <title>Bible Study Companion</title>
+    <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <title>Bible Study Companion</title>
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <style>
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .fade-in { animation: fadeIn 0.3s ease-out; }
+        .install-btn { position: fixed; bottom: 1rem; right: 1rem; }
     </style>
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
@@ -84,25 +89,78 @@
                 </button>
             </div>
         </div>
+
+        <!-- Install Button -->
+        <button id="installBtn" class="install-btn hidden bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700 transition-colors">
+            Install App
+        </button>
     </div>
 
     <script>
+        // PWA Installation
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('hidden');
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBtn.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
         // Theme Management
         const themeToggle = document.getElementById('theme-toggle');
+        const setTheme = (isDark) => {
+            document.documentElement.classList.toggle('dark', isDark);
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            themeToggle.querySelector('i').classList.toggle('fa-moon', !isDark);
+            themeToggle.querySelector('i').classList.toggle('fa-sun', isDark);
+        };
+
         themeToggle.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            themeToggle.querySelector('i').classList.toggle('fa-moon');
-            themeToggle.querySelector('i').classList.toggle('fa-sun');
+            const isDark = !document.documentElement.classList.contains('dark');
+            setTheme(isDark);
         });
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        setTheme(savedTheme === 'dark');
 
         // TTS Management
         let ttsEnabled = false;
+        let currentSpeech = null;
         const ttsToggle = document.getElementById('tts-toggle');
+        
         ttsToggle.addEventListener('click', () => {
             ttsEnabled = !ttsEnabled;
             ttsToggle.querySelector('i').classList.toggle('fa-volume-mute');
             ttsToggle.querySelector('i').classList.toggle('fa-volume-up');
+            
+            if (!ttsEnabled && currentSpeech) {
+                speechSynthesis.cancel();
+            }
         });
 
         // Message Handling
@@ -116,11 +174,8 @@
             const message = input.value.trim();
             if (!message) return;
 
-            // Add user message
             addMessage(message, 'user');
             input.value = '';
-
-            // Show loader
             document.getElementById('loader').classList.remove('hidden');
 
             try {
@@ -181,7 +236,7 @@
         // Voice Input
         function toggleVoiceInput() {
             const voiceBtn = document.getElementById('voice-btn');
-            if (!('webkitSpeechRecognition' in window)) {
+            if (!('webkitSpeechRecognition' in window')) {
                 alert('Speech recognition not supported');
                 return;
             }
@@ -210,14 +265,17 @@
         }
 
         function textToSpeech(text) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            speechSynthesis.speak(utterance);
-        }
-
-        // Initialize theme
-        if (localStorage.getItem('theme') === 'dark') {
-            document.documentElement.classList.add('dark');
-            themeToggle.querySelector('i').classList.add('fa-sun');
+            if (!ttsEnabled) return;
+            
+            if (currentSpeech) {
+                speechSynthesis.cancel();
+            }
+            
+            currentSpeech = new SpeechSynthesisUtterance(text);
+            currentSpeech.onend = () => {
+                currentSpeech = null;
+            };
+            speechSynthesis.speak(currentSpeech);
         }
     </script>
 </body>
