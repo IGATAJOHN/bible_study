@@ -1,25 +1,24 @@
-const CACHE_NAME = 'bible-study-cache-v1';
-const urlsToCache = [
+const CACHE_NAME = 'bible-study-v1';
+const ASSETS = [
   '/',
-  '/static/css/style.css',
-  '/static/js/main.js',
-  // Add other URLs of resources to cache
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/static/assets/img/bible.jfif'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
+      .then(cache => cache.addAll(ASSETS))
   );
 });
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
-      .then((response) => {
-        return response || fetch(event.request);
-      })
+      .then(response => response || fetch(event.request))
   );
 });
