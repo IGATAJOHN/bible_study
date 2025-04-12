@@ -104,7 +104,7 @@
             localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
             applyTheme();
         });
-        applyTheme(); // Initial theme apply
+        applyTheme();
 
         // Message Handling
         const sendBtn = document.getElementById('send-btn');
@@ -144,28 +144,38 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         };
 
-        // Mock response for testing - Remove in production
-        const getMockResponse = async (query) => {
-            return new Promise(resolve => setTimeout(() => {
-                resolve(`Thank you for your question about "${query}". While I'm a basic demo, in a real implementation I would provide Scripture references and insights.`);
-            }, 1000));
+        // API Integration
+        const getBotResponse = async (message) => {
+            try {
+                const response = await fetch('/get-response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input: message })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { response: "Sorry, I'm having trouble connecting to the server. Please try again later." };
+            }
         };
 
         sendBtn.addEventListener('click', async () => {
             const message = userInput.value.trim();
             if (!message) return;
 
-            // Add user message
             addMessage(message, true);
             userInput.value = '';
             document.getElementById('loader').classList.remove('hidden');
 
             try {
-                // Simulated response - Replace with actual API call
-                const response = await getMockResponse(message);
-                addMessage(response, false);
+                const data = await getBotResponse(message);
+                addMessage(data.response, false);
             } catch (error) {
-                addMessage('Sorry, there was an error processing your request.', false);
+                addMessage('There was an error processing your request.', false);
             } finally {
                 document.getElementById('loader').classList.add('hidden');
             }
@@ -175,13 +185,42 @@
             if (e.key === 'Enter') sendBtn.click();
         });
 
-        // TTS Toggle
+        // TTS Functionality
         let ttsEnabled = false;
-        document.getElementById('tts-toggle').addEventListener('click', function() {
+        let currentSpeech = null;
+        const ttsToggle = document.getElementById('tts-toggle');
+        
+        ttsToggle.addEventListener('click', function() {
             ttsEnabled = !ttsEnabled;
             this.querySelector('i').classList.toggle('fa-volume-mute');
             this.querySelector('i').classList.toggle('fa-volume-up');
+            
+            if (!ttsEnabled && currentSpeech) {
+                speechSynthesis.cancel();
+            }
         });
+
+        const textToSpeech = (text) => {
+            if (!ttsEnabled) return;
+            
+            if (currentSpeech) {
+                speechSynthesis.cancel();
+            }
+            
+            currentSpeech = new SpeechSynthesisUtterance(text);
+            currentSpeech.onend = () => currentSpeech = null;
+            speechSynthesis.speak(currentSpeech);
+        };
+
+        // Update addMessage call to include TTS
+        // Modify the message sending block:
+        try {
+            const data = await getBotResponse(message);
+            addMessage(data.response, false);
+            textToSpeech(data.response); // Add this line
+        } catch (error) {
+            addMessage('There was an error processing your request.', false);
+        }
     </script>
 </body>
 </html>
