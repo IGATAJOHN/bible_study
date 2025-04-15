@@ -161,5 +161,19 @@ def send_whatsapp_message(phone_number, message_text):
     response = requests.post(url, headers=headers, json=payload)
     if response.status_code != 200:
         print(f"Failed to send message: {response.text}")
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def service_worker():
+    response = make_response(send_from_directory('static', 'sw.js'))
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Content-Type'] = 'application/javascript'
+    return response
+
+@app.route('/offline')
+def offline():
+    return render_template('offline.html')
 if __name__=='__main__':
     app.run(debug=True, host='0.0.0.0', port='5000')
